@@ -1,65 +1,67 @@
-"use client";
+'use client';
+
+import { memo, useEffect, useCallback } from 'react';
+import { useChartRenderer } from '@/hooks/useChartRenderer';
+import { DataPoint, ChartConfig } from '@/lib/types';
+import { scaleValue } from '@/lib/canvasUtils';
 
 interface BarChartProps {
-  data: Array<{ label: string; value: number }>;
-  title?: string;
+  data: DataPoint[];
+  config: ChartConfig;
   color?: string;
+  showGrid?: boolean;
+  onRender?: () => void;
 }
 
-export default function BarChart({
+export const BarChart = memo(function BarChart({
   data,
-  title,
-  color = "black",
+  config,
+  color = '#10b981',
+  showGrid = true,
+  onRender,
 }: BarChartProps) {
-  if (!data || data.length === 0) {
-    return (
-      <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-zinc-900">
-        {title && (
-          <h3 className="text-lg font-medium text-black dark:text-zinc-50 mb-4">
-            {title}
-          </h3>
-        )}
-        <div className="flex items-center justify-center h-32 text-zinc-500 dark:text-zinc-400">
-          No data available
-        </div>
-      </div>
-    );
-  }
+  const { canvasRef, render } = useChartRenderer({
+    config,
+    data,
+    color,
+    showGrid,
+  });
 
-  const maxValue = Math.max(...data.map((d) => d.value));
-  const normalizedMax = maxValue > 0 ? maxValue : 1;
+  const drawChart = useCallback(() => {
+    const result = render();
+    if (!result) return;
+
+    const { renderer, points, bounds, yMin, yMax } = result;
+
+    const barWidth = bounds.width / Math.max(points.length, 1);
+    const zeroY = scaleValue(0, yMin, yMax, bounds.y + bounds.height, bounds.y);
+
+    points.forEach((point, index) => {
+      const x = point.x - barWidth / 2;
+      const height = zeroY - point.y;
+      const y = Math.min(point.y, zeroY);
+
+      renderer.drawRect(
+        x,
+        y,
+        barWidth * 0.8,
+        Math.abs(height),
+        color,
+        true
+      );
+    });
+
+    onRender?.();
+  }, [render, color, onRender]);
+
+  useEffect(() => {
+    drawChart();
+  }, [drawChart]);
 
   return (
-    <div className="rounded-lg bg-white p-6 shadow-sm dark:bg-zinc-900">
-      {title && (
-        <h3 className="text-lg font-medium text-black dark:text-zinc-50 mb-4">
-          {title}
-        </h3>
-      )}
-      <div className="space-y-3">
-        {data.map((item, index) => (
-          <div key={index} className="space-y-1">
-            <div className="flex justify-between text-sm">
-              <span className="text-zinc-700 dark:text-zinc-300">
-                {item.label}
-              </span>
-              <span className="font-medium text-black dark:text-zinc-50">
-                {item.value}
-              </span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-zinc-200 dark:bg-zinc-800 overflow-hidden">
-              <div
-                className="h-full rounded-full transition-all"
-                style={{
-                  width: `${(item.value / normalizedMax) * 100}%`,
-                  backgroundColor: color,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="chart-canvas"
+    />
   );
-}
-
+});

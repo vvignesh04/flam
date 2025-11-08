@@ -1,24 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from 'next/server';
+import { DataGenerator } from '@/lib/dataGenerator';
+import { DataPoint } from '@/lib/types';
 
-export async function GET() {
-  try {
-    // Sample performance data
-    const data = {
-      metrics: {
-        responseTime: 245,
-        throughput: 1250,
-        errorRate: 0.02,
-        uptime: 99.9,
-      },
-      timestamp: new Date().toISOString(),
-    };
+const dataGenerator = new DataGenerator(100, 0.1, 10);
 
-    return NextResponse.json(data, { status: 200 });
-  } catch (error) {
-    return NextResponse.json(
-      { error: "Failed to fetch data" },
-      { status: 500 }
-    );
-  }
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const count = parseInt(searchParams.get('count') || '100');
+  const startTime = parseInt(searchParams.get('startTime') || String(Date.now()));
+  const interval = parseInt(searchParams.get('interval') || '1000');
+
+  const data: DataPoint[] = dataGenerator.generateBatch(
+    parseInt(startTime.toString()),
+    count,
+    interval
+  );
+
+  return NextResponse.json({
+    data,
+    timestamp: Date.now(),
+    count: data.length,
+  });
 }
 
+export const runtime = 'edge';

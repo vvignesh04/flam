@@ -1,35 +1,52 @@
-export function cn(...classes: (string | undefined | null | false)[]): string {
-  return classes.filter(Boolean).join(" ");
+import { DataPoint } from './types';
+
+export function formatTimestamp(timestamp: number): string {
+  return new Date(timestamp).toLocaleString();
 }
 
-export function formatNumber(num: number, decimals: number = 2): string {
-  return num.toFixed(decimals);
+export function formatValue(value: number, decimals: number = 2): string {
+  return value.toFixed(decimals);
 }
 
-export function formatBytes(bytes: number): string {
-  if (bytes === 0) return "0 Bytes";
-  const k = 1024;
-  const sizes = ["Bytes", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(2))} ${sizes[i]}`;
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
 }
 
-export function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(2)}s`;
-  if (ms < 3600000) return `${(ms / 60000).toFixed(2)}m`;
-  return `${(ms / 3600000).toFixed(2)}h`;
+export function lerp(start: number, end: number, t: number): number {
+  return start + (end - start) * t;
 }
 
-export function formatPercentage(value: number, decimals: number = 2): string {
-  return `${value.toFixed(decimals)}%`;
+export function getMinMax(data: DataPoint[]): { min: number; max: number } {
+  if (data.length === 0) return { min: 0, max: 100 };
+  
+  const values = data.map(d => d.value);
+  return {
+    min: Math.min(...values),
+    max: Math.max(...values),
+  };
 }
 
-export function calculatePercentageChange(
-  current: number,
-  previous: number
-): number {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / previous) * 100;
+export function debounce<T extends (...args: any[]) => void>(
+  func: T,
+  wait: number
+): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null;
+  return function (this: any, ...args: Parameters<T>) {
+    if (timeout) clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(this, args), wait);
+  };
 }
 
+export function throttle<T extends (...args: any[]) => void>(
+  func: T,
+  limit: number
+): (...args: Parameters<T>) => void {
+  let inThrottle: boolean;
+  return function (this: any, ...args: Parameters<T>) {
+    if (!inThrottle) {
+      func.apply(this, args);
+      inThrottle = true;
+      setTimeout(() => (inThrottle = false), limit);
+    }
+  };
+}

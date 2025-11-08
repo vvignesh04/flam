@@ -1,0 +1,31 @@
+{
+  "version": 3,
+  "middleware": {},
+  "functions": {
+    "/api/data/route": {
+      "files": [
+        "server/middleware-build-manifest.js",
+        "server/middleware-react-loadable-manifest.js",
+        "server/next-font-manifest.js",
+        "server/interception-route-rewrite-manifest.js",
+        "server/edge-runtime-webpack.js",
+        "server/app/api/data/route.js"
+      ],
+      "name": "app/api/data/route",
+      "page": "/api/data/route",
+      "matchers": [
+        {
+          "regexp": "^/api/data$",
+          "originalSource": "/api/data"
+        }
+      ],
+      "wasm": [],
+      "assets": [],
+      "env": {
+        "__NEXT_BUILD_ID": "development",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "0aYjnw9sjN0oAoRxEWCNEvXQ2LKl2zFXxLNsGCmOGsk="
+      }
+    }
+  },
+  "sortedMiddleware": []
+}
